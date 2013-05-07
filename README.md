@@ -16,10 +16,30 @@ Released under MIT license.
 - Fits in App Store.
 - Has a feature that can't be enabled on the App Store (I tried, Apple rejected it). Find the hidden menu item and unhide it to enable the feature. Then try it out. There's probably a screencast of it in the git history that you can use if you want to sell it outside the App Store.
 
+> Desk Labels ★★★★★
+> by yampto1 - Version 1.0 - Feb 25, 2013
+>
+> I found this application after a search for something that would make my life easier when working with my desktop files and folders so I purchased this and what a difference it makes! Just one glance at my labels instead of looking at each individual file or folder title is so much easier. If you have files or folders on your desktop that you would like to label then I would recommend that you give this application a try.
+
+> "★★★★★ This App is simply great for desktop labels and reminders as well." - App Store (US) review
+
+> "★★★★★ I found this application after a search for something that would make my life easier when working with my desktop files and folders so I purchased this and what a difference it makes! Just one glance at my labels instead of looking at each individual file or folder title is so much easier. If you have files or folders on your desktop that you would like to label then I would recommend that you give this application a try." - App Store (UK) review
+
+
 ### Mail Ping
 
 - Completely done.
 - Fits in App Store.
+
+> Funciona! ★★★★★
+> by btrazzini - Version 1.2 - Apr 9, 2013
+>
+> Funciona exatamente como o descrito. ;)
+
+> Bien con limitaciones ★★★
+> by oscarguit - Version 1.0 - Mar 14, 2013
+>
+> La experiencia general es que funciona. Positivo: - Las notificaciones funcionan bien Negativo: - No se pueden configurar las notificaciones (por ejemplo que sólo cuente mensajes nuevos y no muestre notificaciones) - Muy lento para comprobar - "Go to inbox" y "Go to compose" no funcionan como Google Notifier: necesitas introducir la contraseña en el navegador o estar ya dentro de la cuenta. The general feeling is that It works. Positive: - Notifications working like a charm Negative: - No possibility for configuring notifications (for example, for only counting new messages and not showing notifications) - Very slow to check - Go to inbox and Go to compose don't work like Google Notifier: you do need to enter your password in your browser or being already logged in.
 
 ### MusicApp
 
