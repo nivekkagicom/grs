@@ -5,86 +5,64 @@
 //  Created by Steven Degutis on 3/14/13.
 //  Copyright (c) 2013 Steven Degutis. All rights reserved.
 //
+//  Modified by Iain Holmes
+//  Copyright (c) 2013 Sleep(5)
+//
 
 #import "SDTBAppDelegate.h"
-
-#import "SDPreferencesWindowController.h"
-
-#import "SDGeneralPrefPane.h"
-
-#import <ServiceManagement/ServiceManagement.h>
-
 #import "SDWelcomeWindowController.h"
+#import "DCOAboutWindowController.h"
 
-@implementation SDTBAppDelegate
+@implementation SDTBAppDelegate {
+    DCOAboutWindowController *_aboutWindowController;
+}
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
-    [[NSImage imageNamed:@"NextTrack"] setTemplate:YES];
-    [[NSImage imageNamed:@"PreviousTrack"] setTemplate:YES];
-    [[NSImage imageNamed:@"Play"] setTemplate:YES];
-    [[NSImage imageNamed:@"Pause"] setTemplate:YES];
-    
 	NSString *plistPath = [[NSBundle mainBundle] pathForResource:@"DefaultValues" ofType:@"plist"];
 	NSDictionary *initialValues = [NSDictionary dictionaryWithContentsOfFile:plistPath];
 	[[NSUserDefaults standardUserDefaults] registerDefaults:initialValues];
     
-    [iTunesProxy proxy].delegate = self.statusItemController;
     [[iTunesProxy proxy] loadInitialTunesBarInfo];
     [self.statusItemController setupStatusItem];
     
+    [iTunesProxy proxy].delegate = self.statusItemController;
+    
     [SDWelcomeWindowController showInstructionsWindowFirstTimeOnly];
-}
-
-- (IBAction) showPreferencesWindow:(id)sender {
-    [NSApp activateIgnoringOtherApps:YES];
     
-    if (self.preferencesWindowController == nil) {
-        self.preferencesWindowController = [[SDPreferencesWindowController alloc] init];
-        [self.preferencesWindowController usePreferencePaneControllerClasses:@[[SDGeneralPrefPane self]]];
+    NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
+    [nc addObserver:self selector:@selector(windowWillClose:) name:NSWindowWillCloseNotification object:nil];
+}
+
+- (void)applicationDidBecomeActive:(NSNotification *)notification
+{
+}
+
+- (void)applicationDidResignActive:(NSNotification *)notification
+{
+    [self.statusItemController hideInfoPanel];
+}
+
+- (void)windowLostFocus
+{
+    NSLog(@"Lost focus");
+}
+
+- (void)windowWillClose:(NSNotification *)note
+{
+    if (note.object == _aboutWindowController.window) {
+        _aboutWindowController = nil;
+    }
+}
+
+- (IBAction)showAbout:(id)sender
+{
+    if (_aboutWindowController) {
+        [_aboutWindowController.window orderFront:self];
+        return;
     }
     
-    [self.preferencesWindowController showWindow:sender];
+    _aboutWindowController = [[DCOAboutWindowController alloc] init];
+    _aboutWindowController.appWebsiteURL = [NSURL URLWithString:@"http://falsevictories.com"];
+    [_aboutWindowController showWindow:nil];
 }
-
-- (IBAction) reallyShowAboutPanel:(id)sender {
-    [NSApp activateIgnoringOtherApps:YES];
-    [NSApp orderFrontStandardAboutPanel:sender];
-}
-
-- (IBAction) toggleOpenAtLogin:(id)sender {
-	NSInteger changingToState = ![sender state];
-    if (!SMLoginItemSetEnabled(CFSTR("org.degutis.TunesBarHelper"), changingToState)) {
-        NSRunAlertPanel(@"Could not change Open at Login status",
-                        @"For some reason, this failed. Most likely it's because the app isn't in the Applications folder.",
-                        @"OK",
-                        nil,
-                        nil);
-    }
-}
-
-- (BOOL) opensAtLogin {
-    CFArrayRef jobDictsCF = SMCopyAllJobDictionaries( kSMDomainUserLaunchd );
-    NSArray* jobDicts = (__bridge_transfer NSArray*)jobDictsCF;
-    // Note: Sandbox issue when using SMJobCopyDictionary()
-
-    if ((jobDicts != nil) && [jobDicts count] > 0) {
-        BOOL bOnDemand = NO;
-
-        for (NSDictionary* job in jobDicts) {
-            if ([[job objectForKey:@"Label"] isEqualToString: @"org.degutis.TunesBarHelper"]) {
-                bOnDemand = [[job objectForKey:@"OnDemand"] boolValue];
-                break;
-            }
-        }
-
-        return bOnDemand;
-    }
-    return NO;
-}
-
-- (void) menuNeedsUpdate:(NSMenu *)menu {
-    BOOL opensAtLogin = [self opensAtLogin];
-    [[menu itemWithTitle:@"Open at Login"] setState:(opensAtLogin ? NSOnState : NSOffState)];
-}
-
 @end

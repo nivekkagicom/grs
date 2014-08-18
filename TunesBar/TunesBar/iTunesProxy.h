@@ -30,7 +30,9 @@
 @property (copy, readonly) NSString* trackArtist;
 @property (copy, readonly) NSString* trackAlbum;
 @property (copy, readonly) NSString* trackGenre;
-@property (copy, readonly) NSString* trackTotalTime;
+@property (copy, readonly) NSImage *coverArtwork;
+@property (copy, readonly) NSString *artworkMD5;
+@property (readonly) NSArray *albumTracks;
 
 + (iTunesProxy*) proxy;
 

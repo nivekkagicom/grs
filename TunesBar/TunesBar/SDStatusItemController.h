@@ -7,11 +7,15 @@
 //
 
 #import <Cocoa/Cocoa.h>
-
+#import "SDTBWindow.h"
 #import "iTunesProxy.h"
 
-@interface SDStatusItemController : NSResponder <iTunesDelegate>
+@interface SDStatusItemController : NSResponder <iTunesDelegate, SDTBWindowDelegate>
 
-- (void) setupStatusItem;
+@property (readonly) NSStatusItem *statusItem;
+
+- (void)setupStatusItem;
+
+- (void)hideInfoPanel;
 
 @end

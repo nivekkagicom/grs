@@ -7,6 +7,7 @@
 //
 
 #import "iTunesProxy.h"
+#import "NSData+MD5.h"
 
 
 @interface iTunesProxy ()
@@ -22,14 +23,17 @@
 @property (copy) NSString *trackArtist;
 @property (copy) NSString *trackAlbum;
 @property (copy) NSString *trackGenre;
-@property (copy) NSString *trackTotalTime;
+@property (copy) NSImage *coverArtwork;
+@property (copy) NSString *artworkMD5;
+@property (readwrite) NSArray *albumTracks;
 
 @end
 
 
 @implementation iTunesProxy
 
-@dynamic isPlaying;
+@synthesize isPlaying;
+@synthesize isRunning;
 
 + (iTunesProxy*) proxy {
     static iTunesProxy* iTunesPrivateSharedController = nil;
@@ -43,6 +47,10 @@
 - (id) init {
 	if (self = [super init]) {
 		self.iTunes = [SBApplication applicationWithBundleIdentifier:@"com.apple.iTunes"];
+        
+        if (self.iTunes == nil) {
+            NSLog(@"No proxy");
+        }
 		[self.iTunes setDelegate:(id)self];
 		
 		[[NSDistributedNotificationCenter defaultCenter] addObserver:self
@@ -73,7 +81,7 @@
 	[self _updatePropertiesUsingDictionary:[notification userInfo]];
 	[self.delegate iTunesUpdated];
 	
-	self.shouldUseCache = NO;
+ 	self.shouldUseCache = NO;
 }
 
 - (void) _updatePropertiesUsingDictionary:(NSDictionary*)dictionary {
@@ -81,7 +89,10 @@
 		// this should be called at every update except right after launch
 		
 		self.cachedIsRunning = ([dictionary isEqualToDictionary:[NSDictionary dictionaryWithObject:@"Stopped" forKey:@"Player State"]] == NO);
+        
+        [self willChangeValueForKey:@"isPlaying"];
 		self.cachedIsPlaying = ([[dictionary objectForKey:@"Player State"] isEqualToString:@"Playing"] == YES);
+        [self didChangeValueForKey:@"isPlaying"];
 	}
 	
 	[self _updatePropertiesFromScriptingBridge];
@@ -93,45 +104,62 @@
 		self.trackArtist = nil;
 		self.trackAlbum = nil;
 		self.trackGenre = nil;
-		self.trackTotalTime = nil;
+        self.coverArtwork = nil;
+        self.albumTracks = nil;
 	}
 	else {
 		iTunesTrack *track = nil;
 		
-		@try {
-			track = [[self.iTunes currentTrack] get];
-		}
-		@catch (NSException * e) {
-			track = nil;
-		}
-		@finally {
-			if (track) {
-				self.trackName = [track name];
-				self.trackArtist = [track artist];
-				self.trackAlbum = [track album];
-				self.trackGenre = [track genre];
-			}
-			else {
-				self.trackName = @"Unknown Track Name";
-				self.trackArtist = @"Unknown Artist";
-				self.trackAlbum = @"Unknown Album";
-				self.trackGenre = @"Unknown Genre";
-			}
-			
-			int duration = (int)[track duration];
-			int min = (duration / 60);
-			int sec = (duration % 60);
-			
-			self.trackTotalTime = [NSString stringWithFormat:@"%02d:%02d", min, sec];
-		}
+        track = [self.iTunes currentTrack];
+        if ([track exists]) {
+            track = [track get];
+        } else {
+            NSLog(@"Track doesn't exist");
+            track = nil;
+        }
+    
+        if (track) {
+            self.trackName = [track name];
+            self.trackArtist = [track artist];
+            self.trackAlbum = [track album];
+            self.trackGenre = [track genre];
+            
+            // The header for searchFor:only: claims to return an iTunesTrack but it returns an array
+            NSArray *albumTracks = (NSArray *)[self.iTunes.currentPlaylist searchFor:self.trackAlbum only:iTunesESrAAlbums];
+            
+            NSMutableArray *realTracks = [NSMutableArray array];
+            for (iTunesTrack *albumTrack in albumTracks) {
+                if ([albumTrack.artist isEqualTo:track.artist] && [albumTrack.album isEqualTo:track.album]) {
+                    [realTracks addObject:albumTrack];
+                }
+            }
+            
+            self.albumTracks = realTracks;
+            
+            SBElementArray *artworks = [track artworks];
+            iTunesArtwork *artwork = [artworks objectAtIndex:0];
+            
+            NSData *rawArtwork = [artwork rawData];
+            NSString *newMD5 = [rawArtwork md5];
+            
+            if (![newMD5 isEqualToString:self.artworkMD5]) {
+                self.coverArtwork = [[NSImage alloc] initWithData:rawArtwork];
+                self.artworkMD5 = newMD5;
+            }
+        } else {
+            self.trackName = NSLocalizedString(@"Unknown Track Name", nil);
+            self.trackArtist = NSLocalizedString(@"Unknown Artist", nil);
+            self.trackAlbum = NSLocalizedString(@"Unknown Album", nil);
+            self.trackGenre = NSLocalizedString(@"Unknown Genre", nil);
+            self.coverArtwork = nil;
+            self.artworkMD5 = nil;
+            self.albumTracks = nil;
+        }
 	}
 }
 
 - (BOOL) isRunning {
-	if (self.shouldUseCache)
-		return self.cachedIsRunning;
-	else
-		return [self.iTunes isRunning];
+    return [self.iTunes isRunning];
 }
 
 - (BOOL) isPlaying {
@@ -146,4 +174,11 @@
 	}
 }
 
+- (id)eventDidFail:(const AppleEvent *)event withError:(NSError *)error
+{
+    NSLog(@"Event failed with error");
+    NSLog(@"%@", error);
+    NSLog(@"%@", [error userInfo]);
+    return nil;
+}
 @end
